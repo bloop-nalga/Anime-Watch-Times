@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import AnimeCard from '@/components/AnimeCard';
+import AnimeCard from '../components/AnimeCard';
 export default function Schedule(){
   const [list,setList]=useState([]);
   const [loading,setLoading]=useState(true);
