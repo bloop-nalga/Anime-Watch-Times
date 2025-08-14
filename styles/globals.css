@@ -1,1 +1,21 @@
-body{margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;} a{color:#bee7e8}
+/* Base site styles */
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+a { color: #bee7e8; }
+
+/* Remove width constraints that are squeezing /schedule (and any other page) */
+main, .container, .content, .wrapper {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+}
+
+/* Helpful default: images never overflow */
+img { max-width: 100%; height: auto; display: block; }
