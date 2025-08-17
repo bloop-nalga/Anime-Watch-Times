@@ -6,38 +6,38 @@ import Link from "next/link";
 const USE_PROXY = true;
 
 /* ---------- Helpers: EST week math & formatting ---------- */
-const WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function toEST(date) {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone:"America/New_York",
-    year:"numeric", month:"numeric", day:"numeric",
-    hour:"numeric", minute:"numeric", second:"numeric", hour12:false,
-  }).formatToParts(date).reduce((acc,p)=>{ if (p.type!=="literal") acc[p.type]=p.value; return acc; },{});
-  return new Date(+parts.year, +parts.month-1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    timeZone: "America/New_York",
+    year: "numeric", month: "numeric", day: "numeric",
+    hour: "numeric", minute: "numeric", second: "numeric", hour12: false,
+  }).formatToParts(date).reduce((acc, p) => { if (p.type !== "literal") acc[p.type] = p.value; return acc; }, {});
+  return new Date(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
 }
 
 function estSundayStart(nowMs, weekOffset) {
   const estNow = toEST(new Date(nowMs));
   const sunday = new Date(estNow.getFullYear(), estNow.getMonth(), estNow.getDate() - estNow.getDay());
-  sunday.setDate(sunday.getDate() + weekOffset*7);
-  return Math.floor(sunday.getTime()/1000);
+  sunday.setDate(sunday.getDate() + weekOffset * 7);
+  return Math.floor(sunday.getTime() / 1000);
 }
 
 function estWeekdayNameFromEpoch(airingAtSec) {
-  return new Intl.DateTimeFormat("en-US", { timeZone:"America/New_York", weekday:"long" })
-    .format(new Date(airingAtSec*1000));
+  return new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long" })
+    .format(new Date(airingAtSec * 1000));
 }
 
 function shortMonthDay(baseUnixSec, dayIndex) {
-  const d = new Date((baseUnixSec + dayIndex*86400)*1000);
-  return d.toLocaleDateString("en-US",{ month:"short", day:"numeric" });
+  const d = new Date((baseUnixSec + dayIndex * 86400) * 1000);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 /* ---------- Slug helpers ---------- */
 function slugifyTitle(title) {
   return (title || "untitled")
-    .toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80);
+    .toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 }
 function makeSlug({ id, title }) { return `${slugifyTitle(title)}-${id}`; }
 
@@ -62,9 +62,9 @@ query ($from: Int, $to: Int) {
 
 async function fetchChunk(from, to, signal) {
   const res = await fetch("https://graphql.anilist.co", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json", "Accept":"application/json" },
-    body: JSON.stringify({ query: QUERY, variables:{ from, to } }),
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({ query: QUERY, variables: { from, to } }),
     signal,
   });
   if (!res.ok) throw new Error("AniList error");
@@ -78,9 +78,9 @@ const inflight = new Map();   // weekStart -> AbortController
 
 async function fetchWeekRawDirect(weekOffset, signal) {
   const weekStart = estSundayStart(Date.now(), weekOffset);
-  const s0 = weekStart, e3 = s0 + 4*86400, s4 = s0 + 4*86400, e6 = s0 + 6*86400 + 86399;
-  const [a,b] = await Promise.all([ fetchChunk(s0, e3, signal), fetchChunk(s4, e6, signal) ]);
-  return { entries:[...a, ...b], weekStart };
+  const s0 = weekStart, e3 = s0 + 4 * 86400, s4 = s0 + 4 * 86400, e6 = s0 + 6 * 86400 + 86399;
+  const [a, b] = await Promise.all([fetchChunk(s0, e3, signal), fetchChunk(s4, e6, signal)]);
+  return { entries: [...a, ...b], weekStart };
 }
 async function fetchWeekRawViaProxy(weekOffset, signal) {
   const r = await fetch(`/api/schedule?offset=${weekOffset}`, { signal });
@@ -108,8 +108,8 @@ function fetchWeek(weekOffset) {
 function prefetchWeek(offset) {
   const ws = estSundayStart(Date.now(), offset);
   if (weekCache.has(ws)) return;
-  const run = () => { fetchWeek(offset).catch(()=>{}); };
-  if (typeof requestIdleCallback!=="undefined") requestIdleCallback(run,{timeout:800}); else setTimeout(run,200);
+  const run = () => { fetchWeek(offset).catch(() => { }); };
+  if (typeof requestIdleCallback !== "undefined") requestIdleCallback(run, { timeout: 800 }); else setTimeout(run, 200);
 }
 
 /* ---------- Group by day & combine same‑day eps ---------- */
@@ -121,7 +121,7 @@ function combineByDay(entries, weekOffset) {
     const day = estWeekdayNameFromEpoch(e.airingAt);
     const id = e.media.id;
     const title = e.media.title.english || e.media.title.romaji || "Untitled";
-    const timeLocal = new Date(e.airingAt*1000).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+    const timeLocal = new Date(e.airingAt * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     const ex = byDay[day][id];
     if (!ex) {
@@ -132,13 +132,13 @@ function combineByDay(entries, weekOffset) {
       };
     } else {
       ex.firstEp = Math.min(ex.firstEp, e.episode);
-      ex.lastEp  = Math.max(ex.lastEp,  e.episode);
+      ex.lastEp = Math.max(ex.lastEp, e.episode);
       if (timeLocal < ex.timeLocal) ex.timeLocal = timeLocal;
     }
   }
 
-  const sortShows = (a,b)=>
-    b.score===a.score?(b.trending===a.trending?b.popularity-a.popularity:b.trending-a.trending):b.score-a.score;
+  const sortShows = (a, b) =>
+    b.score === a.score ? (b.trending === a.trending ? b.popularity - a.popularity : b.trending - a.trending) : b.score - a.score;
 
   const out = {}; WEEKDAYS.forEach(d => { out[d] = Object.values(byDay[d]).sort(sortShows); });
   return { data: out, weekStart };
@@ -146,11 +146,11 @@ function combineByDay(entries, weekOffset) {
 
 /* ---------- Component ---------- */
 export default function WeekSchedule() {
-  const [weekOffset, setWeekOffset]   = useState(0);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState(null);
-  const [data, setData]               = useState(null);
-  const [weekStart, setWeekStart]     = useState(null);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
+  const [weekStart, setWeekStart] = useState(null);
 
   const todayESTIndex = useMemo(() => toEST(new Date()).getDay(), []);
   const [openDayIndex, setOpenDayIndex] = useState(todayESTIndex);
@@ -182,8 +182,8 @@ export default function WeekSchedule() {
       <div className="fullBleed">
         {/* Top controls */}
         <div className="nav">
-          <button onClick={() => setWeekOffset(w => clampOffset(w - 1))}>Previous Week</button>
-          <button onClick={() => setWeekOffset(w => clampOffset(w + 1))}>Next Week</button>
+          <button className="navBtn" onClick={() => setWeekOffset(w => clampOffset(w - 1))}>Past Week</button>
+          <button className="navBtn" onClick={() => setWeekOffset(w => clampOffset(w + 1))}>Next Week</button>
         </div>
 
         {loading && <p className="status">Loading…</p>}
