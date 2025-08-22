@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 116 56" aria-label="Disney Plus">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#0D1B7E"/><stop offset="1" stop-color="#113CCF"/>
+    </linearGradient>
+  </defs>
+  <rect width="116" height="56" rx="12" fill="url(#g)"/>
+  <text x="50%" y="50%" dy=".35em" text-anchor="middle"
+        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        font-size="22" font-weight="700" fill="#FFFFFF">Disney+</text>
+</svg>

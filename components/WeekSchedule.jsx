@@ -153,7 +153,7 @@ export default function WeekSchedule() {
   const [weekStart, setWeekStart] = useState(null);
 
   const todayESTIndex = useMemo(() => toEST(new Date()).getDay(), []);
-  const [openDayIndex, setOpenDayIndex] = useState(todayESTIndex);
+  const [openDays, setOpenDays] = useState(() => new Set([todayESTIndex]));
 
   useEffect(() => {
     let mounted = true;
@@ -165,7 +165,7 @@ export default function WeekSchedule() {
         const { data: grouped, weekStart } = combineByDay(entries, weekOffset);
         setData(grouped);
         setWeekStart(weekStart);
-        setOpenDayIndex(weekOffset === 0 ? todayESTIndex : -1);
+        setOpenDays(weekOffset === 0 ? new Set([todayESTIndex]) : new Set());
         prefetchWeek(weekOffset + 1);
         prefetchWeek(weekOffset - 1);
       })
@@ -192,7 +192,7 @@ export default function WeekSchedule() {
         {!loading && !error && data && weekStart !== null && (
           <div className="days">
             {WEEKDAYS.map((day, i) => {
-              const isOpen = openDayIndex === i;
+              const isOpen = openDays.has(i);
               const shows = data[day];
               const displayDate = shortMonthDay(weekStart, i);
               const isToday = weekOffset === 0 && i === todayESTIndex;
@@ -201,7 +201,14 @@ export default function WeekSchedule() {
                 <div className="day" key={day}>
                   <button
                     className={"dayHeader" + (isToday ? " current" : "")}
-                    onClick={() => setOpenDayIndex(d => (d === i ? -1 : i))}
+                    onClick={() =>
+                    setOpenDays(prev => {
+                      const next = new Set(prev);
+                      if (next.has(i)) next.delete(i);
+                      else next.add(i);
+                      return next;
+                    })
+                    }
                     aria-expanded={isOpen}
                     aria-controls={`panel-${i}`}
                   >
